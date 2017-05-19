@@ -1,4 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../ct-core-utils/ct-api-provider-behaviour.html">
 
 <!--
 `ct-municipality-api`
@@ -9,26 +11,161 @@ API for municipality management
 
 <dom-module id="ct-municipality-api">
   <template>
-    <style>
-      :host {
-        display: block;
-      }
-    </style>
-    <h2>Hello [[prop1]]!</h2>
+
+    <ct-user-identity id="identity"></ct-user-identity>
+
+    <iron-ajax id="getMunicipalities"></iron-ajax>
+    <iron-ajax id="getMunicipalityOnDate"></iron-ajax>
+    <iron-ajax id="getMunicipalityVersions"></iron-ajax>
+    <iron-ajax id="createMunicipality"></iron-ajax>
+    <iron-ajax id="updateMunicipality"></iron-ajax>
+    <iron-ajax id="deleteMunicipality"></iron-ajax>
+
   </template>
 
   <script>
-    Polymer({
+      Polymer({
 
-      is: 'ct-municipality-api',
+          is: 'ct-municipality-api',
+          behaviors: [CT.Behaviours.ApiProvider],
 
-      properties: {
-        prop1: {
-          type: String,
-          value: 'ct-municipality-api',
-        },
-      },
 
-    });
+          /**
+           * Get all available municipalities
+           *
+           * @param {String} [pageNum=0]
+           * @param {String} [pageSize=20]
+           *
+           * @returns {Promise}
+           */
+
+          getMunicipalities : function(pageNum, pageSize){
+
+              var pageNum = pageNum || 0,
+                  pageSize = pageSize || 20,
+                  params = '';
+
+              params += '?page_number='+pageNum;
+              params += '&page_size='+pageSize;
+
+              this.$.getMunicipalities.url = this._url('/municipality'+params);
+              return this._generateRequest(this.$.getMunicipalities);
+          },
+
+          /**
+           * Get a municipality and it's tariffs applicable on a given date
+           *
+           * @param {String} id
+           * @param {String} on_date - format: yyyy-mm-dd
+           *
+           * @returns {Promise}
+           */
+
+          getMunicipalityOnDate : function(id, on_date){
+
+              var params = '';
+
+              if(on_date && typeof on_date == 'string') {
+                  params = '?on_date='+on_date;
+              }
+
+              this.$.getMunicipalities.url = this._url('/municipality/'+id+params);
+              return this._generateRequest(this.$.getMunicipalityOnDate);
+          },
+
+          /**
+           * Get a municipality's historic effective dates
+           *
+           * @param {String} id
+           *
+           * @returns {Promise}
+           */
+
+          getMunicipalityVersions : function(id){
+
+              this.$.getMunicipalityVersions.url = this._url('/municipality/'+id+'/versions');
+              return this._generateRequest(this.$.getMunicipalityVersions);
+          },
+
+          /**
+           * Create a new municipality with it's given tariffs
+           *
+           * @param {Object[]} params
+           * @param {String} params[].name
+           * @param {String} params[].utilityType
+           * @param {String} params[].effectiveDate
+           * @param {String} params[].effectiveDate
+           *
+           * @param {Object[]} params[].tariffBlocks
+           * @param {Number} params[].tariffBlocks[].fromUnits
+           * @param {Number} params[].tariffBlocks[].toUnits
+           * @param {Number} params[].tariffBlocks[].tariff
+           *
+           * @returns {Promise}
+           */
+
+          createMunicipality: function(params) {
+              this.$.createMunicipality.url = this._url('/municipality');
+              this.$.createMunicipality.method = 'POST';
+              this.$.createMunicipality.contentType = "application/json";
+              this.$.createMunicipality.body = params;
+
+              return this._generateRequest(this.$.createMunicipality);
+          },
+
+          /**
+           * Update municipality details as well as add, update and remove desired tariff blocks
+           *
+           * @param {String} id
+           *
+           * @param {Object[]} params
+           * @param {String} params[].name
+           * @param {String} params[].utilityType
+           * @param {String} params[].effectiveDate
+           * @param {String} params[].effectiveDate
+           *
+           * @param {Object[]} params[].addBlocks
+           * @param {Number} [params[].addBlocks[].fromUnits]
+           * @param {Number} [params[].addBlocks[].toUnits]
+           * @param {Number} [params[].addBlocks[].tariff]
+           *
+           * @param {Object[]} params[].updateBlocks
+           * @param {String} [params[].updateBlocks[].id]
+           * @param {Number} [params[].updateBlocks[].fromUnits]
+           * @param {Number} [params[].updateBlocks[].toUnits]
+           * @param {Number} [params[].updateBlocks[].tariff]
+           *
+           * @param {String[]} params[].deleteBlocks
+           * @param {String[]} [params[].deleteBlocks[].id]
+           *
+           * @returns {Promise}
+           */
+
+          updateMunicipality: function(id, params) {
+              this.$.updateMunicipality.url = this._url('/municipality');
+              this.$.updateMunicipality.method = 'PUT';
+              this.$.updateMunicipality.contentType = "application/json";
+              this.$.updateMunicipality.body = params;
+
+              return this._generateRequest(this.$.updateMunicipality);
+          },
+
+          /**
+           * Completely delete and remove all historic tariff blocks of a municipality
+           *
+           * @param {String} id
+           *
+           * @returns {Promise}
+           */
+
+          deleteMunicipality: function(id) {
+              this.$.deleteMunicipality.url = this._url('/municipality/'+id);
+              this.$.deleteMunicipality.method = 'DELETE';
+              this.$.deleteMunicipality.contentType = "application/json";
+
+              return this._generateRequest(this.$.deleteMunicipality);
+          },
+
+      });
   </script>
 </dom-module>
