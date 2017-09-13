@@ -11,9 +11,9 @@ API for municipality management
 
 <dom-module id="ct-municipality-api">
   <template>
-    <iron-ajax id="getMunicipalities"></iron-ajax>
-    <iron-ajax id="getMunicipalityOnDate"></iron-ajax>
-    <iron-ajax id="getMunicipalityVersions"></iron-ajax>
+    <iron-ajax id="searchMunicipalities"></iron-ajax>
+    <iron-ajax id="getMunicipalTariffsOnDate"></iron-ajax>
+    <iron-ajax id="getMunicipalTariffVersions"></iron-ajax>
     <iron-ajax id="createMunicipality"></iron-ajax>
     <iron-ajax id="updateMunicipality"></iron-ajax>
     <iron-ajax id="deleteMunicipality"></iron-ajax>
@@ -27,81 +27,78 @@ API for municipality management
 
 
           /**
-           * Get all available municipalities
-           *
-           * @param {String} [pageNum=0]
-           * @param {String} [pageSize=20]
+           * Search over available municipalities.
+           * Omitting a name returns all.
            *
            * @returns {Promise}
            */
 
-          getMunicipalities : function(pageNum, pageSize){
+          searchMunicipalities : function(pageNum, pageSize, municipality) {
+              var queryParamsClause = [
+                  pageNumber ? 'page_number=' + pageNumber : null,
+                  pageSize ? 'page_size=' + pageSize : null,
+                  municipality ? 'municipality=' + municipality : null
+              ].filter(function (queryParam) {
+                  return queryParam !== null;
+              }).join('&');
+              queryParamsClause = queryParamsClause.length > 0 ? '?' + queryParamsClause : '';
 
-              var pageNum = pageNum || 0,
-                  pageSize = pageSize || 20,
-                  params = '';
-
-              params += '?page_number='+pageNum;
-              params += '&page_size='+pageSize;
-
-              this.$.getMunicipalities.url = this._url('/municipality'+params);
-              return this._generateRequest(this.$.getMunicipalities);
+              this.$.searchMunicipalities.url = this._url('/municipal-tariffs' + queryParamsClause);
+              return this._generateRequest(this.$.searchMunicipalities);
           },
 
           /**
            * Get a municipality and it's tariffs applicable on a given date
            *
            * @param {String} id
-           * @param {String} on_date - format: yyyy-mm-dd
+           * @param {String} onDate - format: yyyy-mm-dd
            *
            * @returns {Promise}
            */
 
-          getMunicipalityOnDate : function(id, on_date){
+          getMunicipalTariffsOnDate : function(id, onDate) {
+              var queryParamsClause = [
+                  onDate ? 'on_date=' + onDate : null
+              ].filter(function (queryParam) {
+                  return queryParam !== null;
+              }).join('&');
+              queryParamsClause = queryParamsClause.length > 0 ? '?' + queryParamsClause : '';
 
-              var params = '';
-
-              if(on_date && typeof on_date == 'string') {
-                  params = '?on_date='+on_date;
-              }
-
-              this.$.getMunicipalities.url = this._url('/municipality/'+id+params);
-              return this._generateRequest(this.$.getMunicipalityOnDate);
+              this.$.getMunicipalTariffsOnDate.url = this._url('/municipal-tariffs/' + id + queryParamsClause);
+              return this._generateRequest(this.$.getMunicipalTariffsOnDate);
           },
 
           /**
-           * Get a municipality's historic effective dates
+           * Get municipal tariff effective dates
            *
            * @param {String} id
            *
            * @returns {Promise}
            */
 
-          getMunicipalityVersions : function(id){
-
-              this.$.getMunicipalityVersions.url = this._url('/municipality/'+id+'/versions');
-              return this._generateRequest(this.$.getMunicipalityVersions);
+          getMunicipalTariffVersions : function(id) {
+              this.$.getMunicipalTariffVersions.url = this._url('/municipal-tariffs/'+id+'/versions');
+              return this._generateRequest(this.$.getMunicipalTariffVersions);
           },
 
           /**
-           * Create a new municipality with it's given tariffs
+           * Create a new municipality with the given tariffs
            *
            * @param {Object[]} params
-           * @param {String} params[].name
-           * @param {String} params[].utilityType
-           * @param {String} params[].effectiveDate
+           * @param {String} params[].municipality
            * @param {String} params[].effectiveDate
            *
-           * @param {Object[]} params[].tariffBlocks
-           * @param {Number} params[].tariffBlocks[].fromUnits
-           * @param {Number} params[].tariffBlocks[].toUnits
-           * @param {Number} params[].tariffBlocks[].tariff
+           * @param {Object[]} params[].tariffs
+           * @param {Number} params[].tariffs[].fromUnits
+           * @param {Number} params[].tariffs[].toUnits
+           * @param {Number} params[].tariffs[].tariff
+           * @param {Number} params[].tariffs[].utilityType
            *
            * @returns {Promise}
            */
 
           createMunicipality: function(params) {
-              this.$.createMunicipality.url = this._url('/municipality');
+              this.$.createMunicipality.url = this._url('/municipal-tariffs');
               this.$.createMunicipality.method = 'POST';
               this.$.createMunicipality.contentType = "application/json";
               this.$.createMunicipality.body = params;
@@ -115,30 +112,20 @@ API for municipality management
            * @param {String} id
            *
            * @param {Object[]} params
-           * @param {String} params[].name
-           * @param {String} params[].utilityType
-           * @param {String} params[].effectiveDate
+           * @param {String} params[].municipality
            * @param {String} params[].effectiveDate
            *
-           * @param {Object[]} params[].addBlocks
-           * @param {Number} [params[].addBlocks[].fromUnits]
-           * @param {Number} [params[].addBlocks[].toUnits]
-           * @param {Number} [params[].addBlocks[].tariff]
-           *
-           * @param {Object[]} params[].updateBlocks
-           * @param {String} [params[].updateBlocks[].id]
-           * @param {Number} [params[].updateBlocks[].fromUnits]
-           * @param {Number} [params[].updateBlocks[].toUnits]
-           * @param {Number} [params[].updateBlocks[].tariff]
-           *
-           * @param {String[]} params[].deleteBlocks
-           * @param {String[]} [params[].deleteBlocks[].id]
+           * @param {Object[]} params[].tariffs
+           * @param {Number} params[].tariffs[].fromUnits
+           * @param {Number} params[].tariffs[].toUnits
+           * @param {Number} params[].tariffs[].tariff
+           * @param {Number} params[].tariffs[].utilityType
            *
            * @returns {Promise}
            */
 
           updateMunicipality: function(id, params) {
-              this.$.updateMunicipality.url = this._url('/municipality');
+              this.$.updateMunicipality.url = this._url('/municipal-tariffs/'+id);
               this.$.updateMunicipality.method = 'PUT';
               this.$.updateMunicipality.contentType = "application/json";
               this.$.updateMunicipality.body = params;
@@ -155,7 +142,7 @@ API for municipality management
            */
 
           deleteMunicipality: function(id) {
-              this.$.deleteMunicipality.url = this._url('/municipality/'+id);
+              this.$.deleteMunicipality.url = this._url('/municipal-tariffs/'+id);
               this.$.deleteMunicipality.method = 'DELETE';
               this.$.deleteMunicipality.contentType = "application/json";
 
