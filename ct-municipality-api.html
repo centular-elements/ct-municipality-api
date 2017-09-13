@@ -33,7 +33,7 @@ API for municipality management
            * @returns {Promise}
            */
 
-          searchMunicipalities : function(pageNum, pageSize, municipality) {
+          searchMunicipalities : function(pageNumber, pageSize, municipality) {
               var queryParamsClause = [
                   pageNumber ? 'page_number=' + pageNumber : null,
                   pageSize ? 'page_size=' + pageSize : null,
