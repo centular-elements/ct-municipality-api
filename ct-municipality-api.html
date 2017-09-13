@@ -43,7 +43,7 @@ API for municipality management
               }).join('&');
               queryParamsClause = queryParamsClause.length > 0 ? '?' + queryParamsClause : '';
 
-              this.$.searchMunicipalities.url = this._url('/municipal-tariffs' + queryParamsClause);
+              this.$.searchMunicipalities.url = this._url('/municipal-tariffs/search' + queryParamsClause);
               return this._generateRequest(this.$.searchMunicipalities);
           },
 
